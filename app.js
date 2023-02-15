@@ -27,6 +27,25 @@ function convertMovieObj(array) {
   return result;
 }
 
+function convertSnakeToCameCase(array) {
+  let result = array.map((dbObj) => {
+    return {
+      directorId: dbObj.director_id,
+      directorName: dbObj.director_name,
+    };
+  });
+  return result;
+}
+
+function convertToCamelCase(array) {
+  let result = array.map((dbObj) => {
+    return {
+      movieName: dbObj.movie_name,
+    };
+  });
+  return result;
+}
+
 const initializeDBAndServer = async () => {
   try {
     db = await open({
@@ -78,5 +97,37 @@ app.get("/movies/:movieId/", async (request, response) => {
 
 //API 4
 app.put("/movies/:movieId/", (request, response) => {
-  console.log(request.params);
+  const { movieId } = request.params;
+  console.log(movieId);
 });
+
+//API 5
+app.delete("/movies/:movieId/", async (request, response) => {
+  const { movieId } = request.params;
+  const deleteQuery = `DELETE FROM movie WHERE movie_id = ${movieId}`;
+  let dbResponse = await db.run(deleteQuery);
+  //console.log(dbResponse);
+  response.send("Movie Removed");
+});
+
+// API 6
+app.get("/directors/", async (request, response) => {
+  const listOfDirectorsQuery = `SELECT * FROM director`;
+  const dbResponse = await db.all(listOfDirectorsQuery);
+  //console.log(dbResponse);
+  let result = convertSnakeToCameCase(dbResponse);
+  //console.log(result);
+  response.send(result);
+});
+
+// API 7
+app.get("/directors/:directorId/movies/", async (request, response) => {
+  const { directorId } = request.params;
+  let query = `SELECT movie_name FROM movie INNER JOIN director ON movie.director_id = director.director_id WHERE director.director_id = ${directorId}`;
+  let dbResponse = await db.all(query);
+  let result = convertToCamelCase(dbResponse);
+  console.log(result);
+  response.send(result);
+  //console.log(dbResponse);
+});
+module.exports = app;
